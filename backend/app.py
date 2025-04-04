@@ -47,6 +47,7 @@ def extract_keypoints_from_image(image):
 
 # ✅ Function to calculate corrections & rating
 def calculate_corrections(detected_keypoints, ideal_pose_keypoints_dict):
+    print("hii")
     corrections = []
     total_diff = 0
     num_compared = 0
