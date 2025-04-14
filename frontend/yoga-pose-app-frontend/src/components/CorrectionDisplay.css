@@ -1,0 +1,11 @@
+/* src/components/CorrectionDisplay.css */
+.correction-display {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 20px;
+  }
+  
+  .correction-display h3 {
+    margin-top: 0;
+  }
+  
