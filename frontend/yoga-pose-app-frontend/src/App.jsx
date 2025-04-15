@@ -5,15 +5,18 @@ import ControlButtons from './components/ControlButtons';
 import CorrectionDisplay from './components/CorrectionDisplay';
 import axios from 'axios';
 import './App.css';
-
+import PoseFeedback from './components/InfoPoseComponent/PoseFeedback';
 function App() {
   const webcamRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
   const [predictedImage, setPredictedImage] = useState(null);
   const [corrections, setCorrections] = useState([]);
+  const [feedbackData, setFeedbackData] = useState({});
 
   // Function to capture a frame and call the backend /predict endpoint
   const captureAndPredict = useCallback(async () => {
+
+    console.log("aa gaya a");
     if (webcamRef.current) {
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
@@ -29,11 +32,17 @@ function App() {
           const response = await axios.post('http://localhost:5000/predict', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
+          console.log("response",response.data);
           // Update the predicted image and corrections based on the response
           // Here we assume the response contains a 'pose' field which you can use to update the image.
           // For demonstration, we simply use a placeholder.
           setPredictedImage(imageSrc); // You might replace this with a URL generated based on response.pose
           setCorrections(response.data.corrections || []);
+          setFeedbackData({
+            rating: response.data.rating,
+            feedback: response.data.feedback,
+            pose: response.data.pose
+          });
         } catch (error) {
           console.error('Prediction API error:', error);
         }
@@ -80,7 +89,8 @@ function App() {
       <h1>Yoga Pose Detection</h1>
       <WebcamView webcamRef={webcamRef} predictedImage={predictedImage} />
       <ControlButtons onStart={startPrediction} onStop={stopPrediction} isRunning={isRunning} />
-      <CorrectionDisplay corrections={corrections} />
+      <CorrectionDisplay corrections={corrections} feedbackData={feedbackData} />
+     
     </div>
   );
 }

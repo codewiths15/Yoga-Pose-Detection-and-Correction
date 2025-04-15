@@ -1,10 +1,17 @@
 // src/components/CorrectionDisplay.js
 import React from 'react';
 import './CorrectionDisplay.css';
+import PoseFeedback from './InfoPoseComponent/PoseFeedback';
 
-const CorrectionDisplay = ({ corrections }) => {
+const CorrectionDisplay = ({ corrections, feedbackData  }) => {
   return (
     <div className="correction-display">
+
+<PoseFeedback
+  rating={feedbackData.rating}
+  feedback={feedbackData.feedback}
+  pose={feedbackData.pose}
+/>
       <h3>Corrections:</h3>
       {corrections && corrections.length > 0 ? (
         <ul>
