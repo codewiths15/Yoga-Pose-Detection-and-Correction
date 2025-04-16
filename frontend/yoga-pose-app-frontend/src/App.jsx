@@ -1,8 +1,9 @@
 // src/App.js
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import WebcamView from './components/WebcamView';
 import ControlButtons from './components/ControlButtons';
 import CorrectionDisplay from './components/CorrectionDisplay';
+import VoiceFeedback from './components/VoiceFeedback';
 import axios from 'axios';
 import './App.css';
 
@@ -11,31 +12,63 @@ function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [predictedImage, setPredictedImage] = useState(null);
   const [corrections, setCorrections] = useState([]);
+  const [status, setStatus] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [detailedCorrections, setDetailedCorrections] = useState([]);
+  const [countdown, setCountdown] = useState(15);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectedPose, setDetectedPose] = useState(null);
+  const [speechEnabled, setSpeechEnabled] = useState(false);
+
+  // Request speech synthesis permission
+  const requestSpeechPermission = () => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance('Voice feedback enabled');
+      utterance.onend = () => {
+        setSpeechEnabled(true);
+      };
+      utterance.onerror = () => {
+        setSpeechEnabled(false);
+        alert('Please enable speech synthesis in your browser settings');
+      };
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert('Speech synthesis is not supported in your browser');
+    }
+  };
 
   // Function to capture a frame and call the backend /predict endpoint
   const captureAndPredict = useCallback(async () => {
     if (webcamRef.current) {
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
-        // Create a form data object to send the image
         const formData = new FormData();
-        // Convert base64 to blob if needed. Here, we are sending the data URL
-        // You may need to convert it to a Blob if your backend expects a file.
-        // For simplicity, assume the backend accepts dataURL.
         formData.append('image', dataURLtoFile(imageSrc, 'frame.jpg'));
-        // Optionally, include session_id if needed:
-        // formData.append('session_id', sessionId);
+        
         try {
           const response = await axios.post('http://localhost:5000/predict', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
-          // Update the predicted image and corrections based on the response
-          // Here we assume the response contains a 'pose' field which you can use to update the image.
-          // For demonstration, we simply use a placeholder.
-          setPredictedImage(imageSrc); // You might replace this with a URL generated based on response.pose
-          setCorrections(response.data.corrections || []);
+          
+          setStatus(response.data.status);
+          setMessage(response.data.message);
+          setFeedback(response.data.feedback);
+          setDetectedPose(response.data.pose);
+          
+          if (response.data.status === 'success') {
+            setPredictedImage(imageSrc);
+            setCorrections(response.data.corrections || []);
+            setDetailedCorrections(response.data.detailed_corrections || []);
+          } else {
+            setCorrections(response.data.suggestions || []);
+            setDetailedCorrections([]);
+          }
         } catch (error) {
           console.error('Prediction API error:', error);
+          setStatus('error');
+          setMessage('Failed to process the image. Please try again.');
+          setCorrections(['Check your internet connection', 'Ensure the camera is working properly']);
         }
       }
     }
@@ -57,30 +90,83 @@ function App() {
   // Timer to periodically capture frames
   const startPrediction = () => {
     setIsRunning(true);
-    // Capture a frame every 1500ms (1.5 seconds)
-    const interval = setInterval(() => {
-      captureAndPredict();
-    }, 1500);
-    // Save the interval ID in state so we can clear it later
-    setIntervalId(interval);
+    setIsDetecting(true);
+    setCountdown(15);
+    setStatus(null);
+    setMessage(null);
+    setFeedback(null);
+    setCorrections([]);
+    setDetailedCorrections([]);
+    setDetectedPose(null);
   };
 
-  const [intervalId, setIntervalId] = useState(null);
+  useEffect(() => {
+    let interval;
+    if (isDetecting && countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown(prev => prev - 1);
+        captureAndPredict();
+      }, 1000);
+    } else if (countdown === 0) {
+      setIsDetecting(false);
+      setIsRunning(false);
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isDetecting, countdown, captureAndPredict]);
 
   const stopPrediction = () => {
     setIsRunning(false);
-    if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
-    }
+    setIsDetecting(false);
+    setCountdown(15);
   };
 
   return (
     <div className="App">
       <h1>Yoga Pose Detection</h1>
-      <WebcamView webcamRef={webcamRef} predictedImage={predictedImage} />
-      <ControlButtons onStart={startPrediction} onStop={stopPrediction} isRunning={isRunning} />
-      <CorrectionDisplay corrections={corrections} />
+      {!speechEnabled && (
+        <button 
+          className="enable-speech-button"
+          onClick={requestSpeechPermission}
+        >
+          Enable Voice Feedback
+        </button>
+      )}
+      {detectedPose && (
+        <div className="detected-pose">
+          <h2>Detected Pose: {detectedPose}</h2>
+        </div>
+      )}
+      <WebcamView 
+        webcamRef={webcamRef} 
+        predictedImage={predictedImage} 
+        isRunning={isRunning}
+        countdown={countdown}
+      />
+      <ControlButtons 
+        onStart={startPrediction} 
+        onStop={stopPrediction} 
+        isRunning={isRunning} 
+        countdown={countdown}
+      />
+      {speechEnabled && (
+        <VoiceFeedback
+          status={status}
+          message={message}
+          corrections={corrections}
+          detailedCorrections={detailedCorrections}
+          isRunning={isRunning}
+        />
+      )}
+      {!isDetecting && (
+        <CorrectionDisplay 
+          corrections={corrections}
+          status={status}
+          message={message}
+          feedback={feedback}
+          detailedCorrections={detailedCorrections}
+        />
+      )}
     </div>
   );
 }

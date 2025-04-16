@@ -3,7 +3,7 @@ import React from 'react';
 import Webcam from 'react-webcam';
 import './WebcamView.css';
 
-const WebcamView = ({ webcamRef, predictedImage }) => {
+const WebcamView = ({ webcamRef, predictedImage, isRunning, countdown }) => {
   return (
     <div className="webcam-container">
       <div className="video-panel">
@@ -18,6 +18,13 @@ const WebcamView = ({ webcamRef, predictedImage }) => {
             facingMode: "user"
           }}
         />
+        {isRunning && (
+          <div className="countdown-overlay">
+            <div className="countdown-text">
+              {countdown > 0 ? `Detecting pose... ${countdown}s` : 'Processing...'}
+            </div>
+          </div>
+        )}
       </div>
       <div className="prediction-panel">
         {predictedImage ? (

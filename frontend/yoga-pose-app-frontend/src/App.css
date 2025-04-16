@@ -3,3 +3,33 @@
   text-align: center;
   margin: 20px;
 }
+
+.detected-pose {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.detected-pose h2 {
+  color: #1976d2;
+  margin: 0;
+  font-size: 1.8em;
+}
+
+.enable-speech-button {
+  background-color: #2196f3;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 10px 0;
+  transition: background-color 0.3s;
+}
+
+.enable-speech-button:hover {
+  background-color: #1976d2;
+}

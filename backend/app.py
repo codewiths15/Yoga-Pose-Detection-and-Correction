@@ -46,11 +46,47 @@ def extract_keypoints_from_image(image):
     return keypoints.flatten()
 
 # ✅ Function to calculate corrections & rating
+def is_valid_pose(keypoints_array):
+    # Check that we have at least 15 keypoints detected (out of 17)
+    visible_joints = np.count_nonzero(keypoints_array[:, 0])
+    if visible_joints < 15:
+        return False, "Not enough keypoints detected. Please ensure your full body is visible in the frame."
+    
+    # Define critical joints that must be visible
+    critical_joints = {
+        'shoulders': [5, 6],  # Left and right shoulder
+        'hips': [11, 12],     # Left and right hip
+        'knees': [13, 14],    # Left and right knee
+        'ankles': [15, 16]    # Left and right ankle
+    }
+    
+    # Check all critical joints are detected
+    missing_joints = []
+    for joint_type, indices in critical_joints.items():
+        for i in indices:
+            if keypoints_array[i, 0] == 0:
+                missing_joints.append(KEYPOINT_LABELS[i])
+    
+    if missing_joints:
+        return False, f"Missing keypoints detected: {', '.join(missing_joints)}. Please adjust your position."
+    
+    # Additional check: ensure body proportions are reasonable
+    # Calculate distance between shoulders
+    shoulder_width = distance.euclidean(keypoints_array[5][:2], keypoints_array[6][:2])
+    # Calculate distance from shoulder to hip
+    torso_height = distance.euclidean(keypoints_array[5][:2], keypoints_array[11][:2])
+    
+    # If proportions are unrealistic (too wide or too narrow)
+    if shoulder_width < 0.1 or shoulder_width > 0.5 or torso_height < 0.1:
+        return False, "Body proportions appear unrealistic. Please ensure you are standing at an appropriate distance from the camera."
+    
+    return True, ""
+
 def calculate_corrections(detected_keypoints, ideal_pose_keypoints_dict):
-    print("hii")
     corrections = []
     total_diff = 0
     num_compared = 0
+    detailed_corrections = []
 
     ideal_pose_keypoints = np.zeros(len(KEYPOINT_LABELS) * 2)
     for i in range(len(KEYPOINT_LABELS)):
@@ -61,25 +97,35 @@ def calculate_corrections(detected_keypoints, ideal_pose_keypoints_dict):
         detected = detected_keypoints[i*2:i*2+2]
         ideal = ideal_pose_keypoints[i*2:i*2+2]
 
-        if np.all(detected > 0) and np.all(ideal > 0):  # Only compare if both are detected
+        if np.all(detected > 0) and np.all(ideal > 0):
             diff = distance.euclidean(detected, ideal)
             total_diff += diff
             num_compared += 1
+            
             if diff > 0.15:
-                direction = ""
+                direction = []
                 if detected[0] - ideal[0] > 0.05:
-                    direction += "move left "
+                    direction.append("left")
                 elif detected[0] - ideal[0] < -0.05:
-                    direction += "move right "
+                    direction.append("right")
+                
                 if detected[1] - ideal[1] > 0.05:
-                    direction += "move up "
+                    direction.append("up")
                 elif detected[1] - ideal[1] < -0.05:
-                    direction += "move down "
+                    direction.append("down")
+                
                 if direction:
-                    corrections.append(f"Adjust {label}: {direction.strip()}")
+                    correction = {
+                        "body_part": label,
+                        "direction": " and ".join(direction),
+                        "distance": f"{diff:.2f} units",
+                        "suggestion": f"Gently move your {label.lower()} {' and '.join(direction)}"
+                    }
+                    detailed_corrections.append(correction)
+                    corrections.append(f"Adjust {label}: move {' and '.join(direction)}")
 
     rating = max(10 - int((total_diff / num_compared) / 0.05), 1) if num_compared > 0 else 1
-    return corrections, rating
+    return corrections, rating, detailed_corrections
 
 # ✅ Flask Route: Pose Prediction
 @app.route('/predict', methods=['POST'])
@@ -94,13 +140,45 @@ def predict_pose():
 
         keypoints = extract_keypoints_from_image(image)
         if keypoints is None or keypoints.size == 0:
-            return jsonify({"error": "Failed to detect keypoints"}), 500
+            return jsonify({
+                "status": "error",
+                "message": "No pose detected",
+                "suggestions": [
+                    "Ensure you are standing in front of the camera",
+                    "Make sure the lighting is adequate",
+                    "Try to position yourself in the center of the frame",
+                    "Ensure your full body is visible"
+                ]
+            }), 400
+
+        keypoints_array = keypoints.reshape(-1, 2)
+        is_valid, validation_message = is_valid_pose(keypoints_array)
+        
+        if not is_valid:
+            return jsonify({
+                "status": "error",
+                "message": validation_message,
+                "suggestions": [
+                    "Step back to show your full body",
+                    "Adjust your position to be more centered",
+                    "Ensure all body parts are visible",
+                    "Try to maintain a clear posture"
+                ]
+            }), 400
 
         keypoints = keypoints.reshape(1, -1)
         predicted_pose = classifier.predict(keypoints)[0]
-        corrections, rating = calculate_corrections(keypoints.flatten(), ideal_keypoints.get(predicted_pose, {}))
+        corrections, rating, detailed_corrections = calculate_corrections(keypoints.flatten(), ideal_keypoints.get(predicted_pose, {}))
 
-        result = {"pose": predicted_pose, "rating": rating, "corrections": corrections}
+        result = {
+            "status": "success",
+            "pose": predicted_pose,
+            "rating": rating,
+            "corrections": corrections,
+            "detailed_corrections": detailed_corrections,
+            "feedback": get_feedback_message(rating, corrections)
+        }
+        
         poses_collection.insert_one(result)
         return jsonify(result)
     except Exception as e:
@@ -119,6 +197,15 @@ def get_results():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def get_feedback_message(rating, corrections):
+    if rating >= 9:
+        return "Excellent form! Your pose is nearly perfect! 💪"
+    elif rating >= 7:
+        return "Good form! Just a few minor adjustments needed."
+    elif rating >= 5:
+        return "Decent attempt! Focus on the corrections to improve your form."
+    else:
+        return "Needs improvement. Please follow the corrections carefully to achieve the correct pose."
 
 # ✅ Start Flask Server
 if __name__ == '__main__':
