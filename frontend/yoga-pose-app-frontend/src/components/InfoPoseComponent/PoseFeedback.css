@@ -1,36 +1,115 @@
 /* src/components/PoseFeedback.css */
 
 .pose-feedback-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px;
-    margin-top: 20px;
-    width: 300px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    font-family: 'Segoe UI', sans-serif;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease-in-out;
+  color: var(--text-color);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  .pose-feedback-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .pose-title {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: #333;
+}
+
+.pose-feedback-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.3);
+  border-color: var(--accent-color);
+}
+
+.pose-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+  text-align: center;
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
   }
-  
-  .pose-detail {
-    margin: 8px 0;
-    font-size: 16px;
-    color: #555;
+  50% {
+    background-position: 100% 50%;
   }
-  
-  .pose-detail span {
-    font-weight: 500;
-    color: #000;
+  100% {
+    background-position: 0% 50%;
   }
+}
+
+.pose-detail {
+  margin: 1rem 0;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.8rem;
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.1);
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.pose-detail:hover {
+  background: rgba(124, 58, 237, 0.2);
+  transform: translateX(5px);
+}
+
+.pose-detail span {
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-right: 0.5rem;
+  display: inline-block;
+  min-width: 100px;
+}
+
+/* Add a beautiful pulse animation for the rating */
+.rating-pulse {
+  animation: pulse 2s infinite;
+  color: #FFD700;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
   

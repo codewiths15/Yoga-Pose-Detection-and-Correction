@@ -1,26 +1,52 @@
 // src/components/CorrectionDisplay.js
 import React from 'react';
 import './CorrectionDisplay.css';
-import PoseFeedback from './InfoPoseComponent/PoseFeedback';
 
-const CorrectionDisplay = ({ corrections, feedbackData  }) => {
+const CorrectionDisplay = ({ corrections, feedbackData }) => {
+  const renderStars = (rating) => {
+    const stars = [];
+    for (let i = 0; i < 5; i++) {
+      stars.push(
+        <span key={i} className="star">
+          {i < rating ? '★' : '☆'}
+        </span>
+      );
+    }
+    return stars;
+  };
+
   return (
-    <div className="correction-display">
-
-<PoseFeedback
-  rating={feedbackData.rating}
-  feedback={feedbackData.feedback}
-  pose={feedbackData.pose}
-/>
-      <h3>Corrections:</h3>
-      {corrections && corrections.length > 0 ? (
-        <ul>
+    <div className="correction-display glass">
+      {feedbackData.pose && (
+        <h3 className="pose-name gradient-text">
+          {feedbackData.pose}
+        </h3>
+      )}
+      
+      {corrections.length > 0 && (
+        <ul className="correction-list">
           {corrections.map((correction, index) => (
-            <li key={index}>{correction}</li>
+            <li key={index} className="correction-item">
+              {correction}
+            </li>
           ))}
         </ul>
-      ) : (
-        <p>No corrections at this time.</p>
+      )}
+
+      {feedbackData.rating && (
+        <div className="feedback-section">
+          <div className="feedback-rating">
+            <span>Rating:</span>
+            <div className="rating-stars">
+              {renderStars(feedbackData.rating)}
+            </div>
+          </div>
+          {feedbackData.feedback && (
+            <p className="feedback-text">
+              {feedbackData.feedback}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

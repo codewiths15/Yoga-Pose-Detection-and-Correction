@@ -5,11 +5,20 @@ import './ControlButtons.css';
 const ControlButtons = ({ onStart, onStop, isRunning }) => {
   return (
     <div className="control-buttons">
-      {!isRunning ? (
-        <button className="start-button" onClick={onStart}>Start Camera</button>
-      ) : (
-        <button className="stop-button" onClick={onStop}>Stop Camera</button>
-      )}
+      <button
+        className={`control-button start-button ${isRunning ? 'active' : ''}`}
+        onClick={onStart}
+        disabled={isRunning}
+      >
+        Start Detection
+      </button>
+      <button
+        className="control-button stop-button"
+        onClick={onStop}
+        disabled={!isRunning}
+      >
+        Stop Detection
+      </button>
     </div>
   );
 };
