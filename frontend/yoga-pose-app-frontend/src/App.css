@@ -19,6 +19,7 @@
 body {
   background-color: var(--background-color);
   color: var(--text-color);
+  overflow-x: hidden;
 }
 
 .App {
@@ -29,25 +30,60 @@ body {
   align-items: center;
   gap: 2rem;
   background: linear-gradient(135deg, var(--background-color) 0%, #2D1B69 100%);
+  position: relative;
 }
 
-h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--text-color);
+.title-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 2rem;
   text-align: center;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 10px rgba(159, 122, 234, 0.5);
-  animation: glow 2s ease-in-out infinite alternate;
 }
 
-@keyframes glow {
-  from {
-    text-shadow: 0 0 10px rgba(159, 122, 234, 0.5);
+.main-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title-part {
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: titleFloat 3s ease-in-out infinite;
+  position: relative;
+}
+
+.title-part:nth-child(1) { animation-delay: 0s; }
+.title-part:nth-child(3) { animation-delay: 0.2s; }
+.title-part:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes titleFloat {
+  0%, 100% {
+    transform: translateY(0);
   }
-  to {
-    text-shadow: 0 0 20px rgba(159, 122, 234, 0.8),
-                 0 0 30px rgba(159, 122, 234, 0.6);
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.title-separator {
+  color: var(--accent-color);
+  font-weight: 300;
+  animation: separatorPulse 2s infinite;
+}
+
+@keyframes separatorPulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -97,4 +133,52 @@ h1 {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* Add background particles */
+.particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: particleFloat 15s infinite linear;
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(100px);
+    opacity: 0;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .main-title {
+    font-size: 2.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .title-separator {
+    display: none;
+  }
 }
